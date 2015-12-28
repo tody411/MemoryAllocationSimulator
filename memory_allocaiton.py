@@ -123,13 +123,48 @@ class MemoryRequests:
             hi += memory_request + 20
 
 
-## Return memory status randomly assigned to 'use' or 'free'.
-def randomAssignedMemory(memory_size=1000, fragment_min=10, fragment_max=100):
+## Int attribute.
+class IntAttribute:
+    def __init__(self, name="", val=0, val_min=0, val_max=100):
+        self._name = name
+        self._val = val
+        self._val_min = val_min
+        self._val_max = val_max
+
+    def name(self):
+        return self._name
+
+    def setValue(self, val):
+        self._val = val
+
+    def value(self):
+        return self._val
+
+    def validator(self, parent=None):
+        return QIntValidator(self._val_min, self._val_max, parent)
+
+
+## Simulation setting.
+class SimulationSetting:
+    def __init__(self):
+        self.memory_size = IntAttribute("Memory Size", 1000, 500, 2000)
+        self.block_min = IntAttribute("Memory Block Min", 50, 10, 100)
+        self.block_max = IntAttribute("Memory Block Max", 200, 100, 500)
+        self.num_trials = IntAttribute("Num Trials", 50, 5, 10000)
+
+
+## Return random memory status with several 'use' or 'free' blocks.
+#
+#  @param memory_size     total memory size.
+#  @param block_min    minimum size of each memory block.
+#  @param block_max    maximum size of each memory block.
+#  @retval Memory instance.
+def randomMemoryStatus(memory_size=1000, block_min=10, block_max=100):
     memory_lists = []
     total = 0
     while total < memory_size:
         memory_lists.append(total)
-        total += random.randint(fragment_min, fragment_max)
+        total += random.randint(block_min, block_max)
 
     memory_lists.append(memory_size)
 
@@ -140,21 +175,29 @@ def randomAssignedMemory(memory_size=1000, fragment_min=10, fragment_max=100):
 
 
 ## Return requested memory blocks for the free available spaces.
+#
+#  @param free_spaces list of free available spaces.
+#  @retval    list of requested memory sizes.
 def requestsMemories(free_spaces):
     memory_size  = 0.8 * np.sum(free_spaces)
-    fragment_min = np.min(free_spaces) / 3
-    fragment_max = np.max(free_spaces)
+    block_min = np.min(free_spaces) / 3
+    block_max = np.max(free_spaces)
 
     memory_requests = []
     total = 0
     while total < memory_size:
-        memory_request = random.randint(fragment_min, fragment_max)
+        memory_request = random.randint(block_min, block_max)
         memory_requests.append(memory_request)
         total += memory_request
     return memory_requests
 
 
 ## Common part of fit functions.
+#  @param free_spaces list of free available spaces.
+#  @param memory_requests   list of requested memory sizes.
+#  @param fit_func          memory allocation function to implement.
+#  @retval success success rate.
+#  @retval fit_blocks list of fitted memory block sizes.
 def commonFit(free_spaces, memory_requests, fit_func):
     fit_spaces = np.zeros(len(free_spaces))
     fit_blocks = [[] for i in range(len(free_spaces))]
@@ -223,36 +266,86 @@ def worstFit(free_spaces, memory_requests):
 
 
 ## Generate a matplot figure to plot the comparison data of: First-Fit, Best-Fit, and Worst-Fit.
-def memoryAllocationComparison(num_comparison=50):
+def runSimulationTrials(num_trials=50, memory_size=1000, block_min=10, block_max=100):
+    plt.title("Memory Allocation Simulation: %s Trials" %num_trials)
+
+    fit_strategies = [("first_fit", "First-Fit", firstFit),
+                      ("best_fit", "Best-Fit", bestFit),
+                      ("worst_fit", "Worst-Fit", worstFit)]
+
     data={}
-    data["best_fit"] = []
-    data["first_fit"] = []
-    data["worst_fit"] = []
-    for i in xrange(num_comparison):
-        memory = randomAssignedMemory()
+
+    for fit_strategy in fit_strategies:
+        data[fit_strategy[0]] = []
+
+    for i in xrange(num_trials):
+        memory = randomMemoryStatus(memory_size, block_min, block_max)
         free_spaces = memory.freeSpaces()
         memory_requests = requestsMemories(free_spaces)
 
-        data["best_fit"].append(bestFit(free_spaces, memory_requests)[0])
-        data["first_fit"].append(firstFit(free_spaces, memory_requests)[0])
-        data["worst_fit"].append(worstFit(free_spaces, memory_requests)[0])
+        for fit_strategy in fit_strategies:
+            data[fit_strategy[0]].append(fit_strategy[2](free_spaces, memory_requests)[0])
 
-    xs = np.arange(num_comparison)
-    plt.plot(xs, data["best_fit"], label='Best-Fit: %s' % np.average(data["best_fit"]))
-    plt.plot(xs, data["first_fit"], label='First-Fit: %s' % np.average(data["first_fit"]))
-    plt.plot(xs, data["worst_fit"], label='Worst-Fit: %s' % np.average(data["worst_fit"]))
+    xs = np.arange(num_trials)
+
+    for fit_strategy in fit_strategies:
+        success_rates = data[fit_strategy[0]]
+        success_rates_avg = np.average(success_rates)
+        label = '%s: %s%%' %(fit_strategy[1], round(100*success_rates_avg, 2))
+        plt.plot(xs, success_rates, label=label)
+
+    plt.ylabel("Success Rates")
+    plt.xlabel("Trials")
 
     plt.legend()
     plt.show()
 
 
+## GUI for simulation setting.
+class SimulationSettingUI(QWidget):
+
+    def __init__(self, setting):
+        super(SimulationSettingUI, self).__init__()
+        self._setting = setting
+        self.createUI()
+        self.setWindowTitle("Simulation Setting")
+
+    ## Create input GUI for simulation setting.
+    def createUI(self):
+        attributes = [self._setting.memory_size,
+                      self._setting.block_min,
+                      self._setting.block_max,
+                      self._setting.num_trials]
+
+        layout = QGridLayout()
+        for i, attribute in enumerate(attributes):
+            label = QLabel(attribute.name())
+            value_edit = QLineEdit()
+            value_edit.setText("%s" % attribute.value())
+            value_edit.editingFinished.connect(self.valueEditChanged(value_edit, attribute.setValue))
+            value_edit.setValidator(attribute.validator())
+            label.setBuddy(value_edit)
+
+            layout.addWidget(label, i, 0)
+            layout.addWidget(value_edit, i, 1)
+
+        self.setLayout(layout)
+
+    ## Callback for the value_edit and setter.
+    def valueEditChanged(self, value_edit, setter):
+        def func():
+            val = int(value_edit.text())
+            setter(val)
+        return func
+
+
 ## GUI of memory allocation simulator.
 #  * mouse click: simulate a memory allocation process with a new memory status.
-class MemoryAllocationSimulator(QWidget):
+class SimulatorView(QWidget):
 
-    def __init__(self, master=None):
-        super(MemoryAllocationSimulator, self).__init__(master)
-        self.setWindowTitle("Memory Allocation Simulator")
+    def __init__(self, setting, parent=None):
+        super(SimulatorView, self).__init__(parent)
+        self._setting = setting
         self._simulate()
 
     ## Paint override: MemoryRequests, 3 Memory objects (First-Fit, Best-Fit, Worst-Fit).
@@ -270,21 +363,23 @@ class MemoryAllocationSimulator(QWidget):
         labels = ["First-Fit", "Best-Fit", "Worst-Fit"]
 
         for label, memory in zip(labels, self._memories):
-            painter.drawText(x, 20, label + ": %s" % memory.success)
+            painter.drawText(x, 20, label + ": %s%%" % round(100 * memory.success, 1))
             memory.paint(painter, x, 30, w, h)
             x += w + 20
 
         painter.end()
 
-    ## Next simulation by mouse clicking.
+    ## Next simulation will be driven by mouse clicking.
     def mousePressEvent(self, e):
         self._simulate()
         self.update()
 
     ## Simulate with a new memory status.
     def _simulate(self):
-        memory_size = 1000
-        memory = randomAssignedMemory(memory_size, 20, 200)
+        memory_size = self._setting.memory_size.value()
+        memory = randomMemoryStatus(memory_size,
+                                      self._setting.block_min.value(),
+                                      self._setting.block_max.value())
         self._memories = [memory, memory.copy(), memory.copy()]
 
         free_spaces = memory.freeSpaces()
@@ -296,12 +391,47 @@ class MemoryAllocationSimulator(QWidget):
             memory.fit(memory_requests, fit_func)
 
 
-## Main function to run GUI.
+## Main Window
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        self.setWindowTitle("Memory Allocation Simulator")
+        self._setting = SimulationSetting()
+
+        view = SimulatorView(self._setting)
+
+        self._setting_ui = SimulationSettingUI(self._setting)
+        self.setCentralWidget(view)
+        self.createMenu()
+
+    def createMenu(self):
+        menu_bar = self.menuBar()
+        simulation_menu = QMenu("Simulation", self)
+        simulation_menu.addAction("Setting GUI", self._showSettingUI)
+        simulation_menu.addAction("Run Simulation Trials", self._runSimulationTrials)
+        menu_bar.addMenu(simulation_menu)
+
+    def closeEvent(self, event):
+        QApplication.closeAllWindows()
+        return QMainWindow.closeEvent(self, event)
+
+    def _runSimulationTrials(self):
+        num_trials = self._setting.num_trials.value()
+        memory_size = self._setting.memory_size.value()
+        block_min = self._setting.block_min.value()
+        block_max = self._setting.block_max.value()
+        runSimulationTrials(num_trials, memory_size, block_min, block_max)
+
+    def _showSettingUI(self):
+        self._setting_ui.show()
+
+
+## Main function to show main window.
 def main():
     app = QApplication(sys.argv)
-    widget = MemoryAllocationSimulator()
-    widget.show()
+    win = MainWindow()
+    win.showMaximized()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    memoryAllocationComparison()
+    main()
