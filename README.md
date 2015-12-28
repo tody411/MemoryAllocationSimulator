@@ -6,11 +6,11 @@ This package is a toy program used for **"Operating System"** lecture.
 It simulates common memory allocation strategies: **First-Fit**, **Best-Fit**, and **Worst-Fit**.
 
 * **First-Fit**:
-    - The allocator places process data where the first large free available block is found.
+    - The allocator places process data where the **first** large free available block is found.
 * **Best-Fit**:
-    - The allocator places process data in the smallest free available block.
+    - The allocator places process data in the **smallest** free available block.
 * **Worst-Fit**:
-    - This memory allocation strategy is opposite to **Best-Fit**. It places process data in the largest free available block.
+    - This memory allocation strategy is opposite to **Best-Fit**. It places process data in the **largest** free available block.
 
 Before processing a each simulation, the memory status is randomly initialized with several *"used"* blocks and *"free"* available blocks.
 Memory requests are also randomly initialized with their total size as 80% of the total *"free"* available space.
@@ -50,10 +50,10 @@ But we can see the overall performance tendency between them.
 
 |Number of Trials  |**First-Fit** | **Best-Fit**  | **Worst-Fit** |
 |--------------|---------------|-----------------|-----------------|
-|50            | 76.01%       | 80.85%     | 67.94% |
-|500            | 74.81%       | 79.16%     | 69.34% |
-|1000            | 74.67%       | 79.08%     | 68.52% |
-|5000            | 74.67%       | 79.34%     | 68.48% |
+|50            | 76.01%       | <span style="color:red">80.85%</span>     | <span style="color:blue">67.94%</span> |
+|500            | 74.81%       | <span style="color:red">79.16%</span>     | <span style="color:blue">69.34%</span> |
+|1000            | 74.67%       | <span style="color:red">79.08%</span>     | <span style="color:blue">68.52%</span> |
+|5000            | 74.67%       | <span style="color:red">79.34%</span>     | <span style="color:blue">68.48%</span> |
 
 ![Comparison](results/Comparison_50.png)
 
