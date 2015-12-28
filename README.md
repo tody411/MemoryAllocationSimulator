@@ -17,27 +17,55 @@ Memory requests are also randomly initialized with their total size as 80% of th
 In the simulation, **First-Fit**, **Best-Fit**, and **Worst-Fit** try to fit the requested memory blocks with their own strategies.
 For each memory allocation strategy, its success rate is computed as *success count/ request count*.
 
-### GUI
-Mouse Click will simulate a memory allocation process with a new memory status.
-In this example, **First-Fit** fails to fit `96MB`, **Worst-Fit** fails to fit `77MB` and `96MB`.
+## GUI
+### Main Window
+Next simulation will be driven by each mouse clicking.
+In this example, requested memory blocks are `120MB`, `54MB`, `78MB`, `142MB`, `137MB`.
+**First-Fit** fails to fit `137MB`, **Worst-Fit** fails to fit `137MB` and `142MB`.
 **Best-Fit** can fit all of memory requests.
 
-![GUI](results/GUI.png)
+![MainWindow](results/MainWindow.png)
 
-### Results
+### Setting GUI
 
-I observed the success rate of each memory allocation strategy with several number of trials.
-Overall, the result tends to be **Best-Fit** > **First-Fit** > **Worst-Fit** regardless of the number of trials.
+You can change simulation setting via `Simulation -> Setting GUI`.
 
-#### 50 trials for comparison of success rates
+* **Memory Size**: total size of the memory.
+* **Memory Block Min**: minimum size of random memory blocks.
+* **Memory Block Max**: maximum size of random memory blocks.
+* **Num Trials**: number of simulation trials.
+
+**Memory Block Min/Max** will change initial placements of *"used"* blocks and *"free"* available blocks within the range of the specified size.
+**Num Trials** is used for observing the success rates with different number of trials.
+
+![SettingGUI](results/SettingGUI.png)
+
+## Results
+
+By changing **Num Trials** setting, I observed the success rate of each memory allocation strategy with several number of trials.
+Regardless of the number of trials, the order of the success rates was **Best-Fit** > **First-Fit** > **Worst-Fit**.
+In my simulation, even **Best-Fit** (best performance for success rate) can fail to fit the requested memory blocks
+since I do not check if the requested memory blocks can be fitted or not.
+But we can see the overall performance tendency between them.
+
+|Number of Trials  |**First-Fit** | **Best-Fit**  | **Worst-Fit** |
+|--------------|---------------|-----------------|-----------------|
+|50            | 76.01%       | 80.85%     | 67.94% |
+|500            | 74.81%       | 79.16%     | 69.34% |
+|1000            | 74.67%       | 79.08%     | 68.52% |
+|5000            | 74.67%       | 79.34%     | 68.48% |
+
 ![Comparison](results/Comparison_50.png)
 
-
-#### 1000 trials for comparison of success rates
 ![Comparison](results/Comparison_1000.png)
 
+## Installation
 
-#### Dependencies
+*Note*: This program was only tested on **Windows** with **Python2.7**.
+**Linux** and **Mac OS** are not officially supported,
+but the following instructions might be helpful for installing on those environments.
+
+### Dependencies
 Please install the following required python modules.
 
 * **NumPy**
@@ -46,6 +74,17 @@ Please install the following required python modules.
 
 As these modules are dependent on NumPy modules, please install appropriate packages for your development environment (Python versions, 32-bit or 64-bit).
 For 64-bit Windows, you can download the binaries from [**Unofficial Windows Binaries for Python Extension Packages**](http://www.lfd.uci.edu/~gohlke/pythonlibs/).
+
+## Usage
+
+This package only includes a single python file `memory_allocaiton.py`.
+If you can successfully install the required python modules above,
+you can launch main window by executing the following command
+(double clicking `memory_allocaiton.py` can be used on **Windows**).
+
+``` bash
+  > python memory_allocaiton.py
+```
 
 ## License
 
