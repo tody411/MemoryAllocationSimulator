@@ -7,9 +7,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
 
 import sys
 import random
@@ -180,7 +180,7 @@ def randomMemoryStatus(memory_size=1000, block_min=10, block_max=100):
 #  @retval    list of requested memory sizes.
 def requestsMemories(free_spaces):
     memory_size  = 0.8 * np.sum(free_spaces)
-    block_min = np.min(free_spaces) / 3
+    block_min = np.min(free_spaces) // 3
     block_max = np.max(free_spaces)
 
     memory_requests = []
@@ -431,7 +431,7 @@ def main():
     app = QApplication(sys.argv)
     win = MainWindow()
     win.showMaximized()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == '__main__':
     main()
